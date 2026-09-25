@@ -1,0 +1,16 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# local tooling (preview server config for Claude Code)
+.claude/
+
+# dependencies & logs (none needed — this is a static site)
+node_modules/
+*.log
+
+# Vercel
+.vercel/

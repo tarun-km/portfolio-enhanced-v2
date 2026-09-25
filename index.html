@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050705">
+<title>Tarun KM — Engineer, Designer &amp; Developer</title>
+<meta name="description" content="Tarun KM — multidisciplinary engineer, designer &amp; developer working across AI, IoT and product design. Chennai, India.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="icon" href="assets/logo.webp" type="image/webp">
+
+<!-- Social share preview. After deploying, replace YOUR-DOMAIN with the live URL
+     (e.g. https://tarunkm.vercel.app) — crawlers need absolute image URLs. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Tarun KM">
+<meta property="og:title" content="Tarun KM — Engineer, Designer &amp; Developer">
+<meta property="og:description" content="Multidisciplinary engineer, designer &amp; developer working across AI, IoT and product design.">
+<meta property="og:image" content="https://YOUR-DOMAIN/assets/hero-poster.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Tarun KM — Engineer, Designer &amp; Developer">
+<meta name="twitter:description" content="Multidisciplinary engineer, designer &amp; developer working across AI, IoT and product design.">
+<meta name="twitter:image" content="https://YOUR-DOMAIN/assets/hero-poster.jpg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="is-loading">
+
+<!-- ============ LOADER ============ -->
+<div class="loader" id="loader" aria-hidden="true">
+  <!-- frosted veil over the (already playing) hero video; it clears on exit -->
+  <div class="loader__veil"></div>
+
+  <div class="loader__top">
+    <span class="xs mono">Tarun KM — Portfolio</span>
+    <span class="xs mono">©<span id="loaderYear"></span></span>
+  </div>
+
+  <div class="loader__center">
+  <h1 class="loader__name" aria-label="Tarun KM">
+    <span class="lt"><span>T</span></span>
+    <span class="lt lt--logo"><img src="assets/logo.webp" alt=""></span>
+    <span class="lt"><span>R</span></span>
+    <span class="lt"><span>U</span></span>
+    <span class="lt"><span>N</span></span>
+    <span class="lt lt--space"></span>
+    <span class="lt lt--fly"><span>K</span></span>
+    <span class="lt lt--fly"><span>M</span></span>
+  </h1>
+
+  <div class="loader__meta">
+    <span class="xs mono">Design &amp; Code</span>
+    <span class="loader__line"><i id="loaderBar"></i></span>
+    <span class="xs mono loader__count" id="loaderCount">000</span>
+  </div>
+  </div>
+
+  <div class="loader__bottom">
+    <span class="xs mono loader__status" id="loaderStatus">Loading</span>
+    <span class="xs mono">Best experienced with sound</span>
+  </div>
+</div>
+
+<!-- ============ FIXED NAV ============ -->
+<nav class="nav" data-theme="dark">
+  <a href="#top" class="nav__logo" aria-label="Home">
+    <img src="assets/logo.webp" alt="Tarun KM" class="nav__logo-img">
+    <span class="nav__km" aria-hidden="true"><span>K</span><span>M</span></span>
+  </a>
+
+  <div class="nav__groups">
+    <div class="nav__group">
+      <p class="nav__label"><i class="ico ico--tri"></i>Repertoire</p>
+      <a href="#works">Works</a>
+      <a href="#insights">Victories</a>
+    </div>
+    <div class="nav__group">
+      <p class="nav__label"><i class="ico ico--dot"></i>Narrative</p>
+      <a href="#about">About</a>
+      <a href="#experience">Experience</a>
+      <a href="#contact">Connect</a>
+    </div>
+    <div class="nav__group">
+      <p class="nav__label"><i class="ico ico--sq"></i>Liaison</p>
+      <a href="#services">For Founders</a>
+      <a href="#services">For Teams</a>
+    </div>
+    <div class="nav__clock">
+      <span class="clock-box" id="clock">00:00:00</span>
+      <span class="xs">Local<br>Time</span>
+    </div>
+  </div>
+
+  <button class="nav__toggle" id="menuToggle" aria-expanded="false">Discover</button>
+</nav>
+
+<!-- Full-screen menu -->
+<div class="menu" id="menu" aria-hidden="true">
+  <ul class="menu__list">
+    <li><a href="#works">Works</a></li>
+    <li><a href="#experience">Experience</a></li>
+    <li><a href="#insights">Victories</a></li>
+    <li><a href="#services">Work with me</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="https://drive.google.com/file/d/1YG7zO1_hywmtOWOotH5zZE3mteTCgt0c/view?usp=sharing" target="_blank" rel="noopener">Résumé ↗</a></li>
+  </ul>
+  <div class="menu__bar"><span>T—K</span><span>Engineer · Designer · Developer</span></div>
+</div>
+
+<!-- HUD: the single floating control surface (contact · journey · sound) -->
+<div class="hud" id="hud">
+  <a href="#contact" class="hud__cta"><span class="sc">Get in touch</span><span class="hud__arrow">→</span></a>
+
+  <button class="hud__chapter dock" id="dock" aria-label="Jump to next chapter">
+    <span class="hud__mark">T</span>
+    <span class="mono dock__chapter" id="dockChapter">CH.00 — Signal</span>
+    <span class="mono dock__progress" id="dockProgress">000%</span>
+    <span class="hud__progress" aria-hidden="true"><i id="hudBar"></i></span>
+  </button>
+
+  <div class="hud__player player" id="player">
+    <button class="player__toggle" id="soundToggle" aria-pressed="false" aria-label="Toggle background music">
+      <span class="bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <span class="player__state" id="soundState">Sound off</span>
+    </button>
+    <div class="player__info">
+      <span class="player__title" id="trackTitle">Velvet Skyline</span>
+      <span class="player__artist">Gemini &amp; Tarun KM</span>
+    </div>
+    <button class="player__next" id="trackNext" aria-label="Next track">→</button>
+  </div>
+</div>
+
+<main id="top">
+
+<!-- ============ HERO ============ -->
+<section class="hero theme-dark" data-chapter="00" data-title="Signal" data-line="A figure in the static. Something is transmitting.">
+  <div class="hero__media">
+    <video class="hero__video" id="heroVideo" autoplay muted loop playsinline preload="auto"
+           poster="assets/hero-poster.jpg" aria-hidden="true">
+      <source src="assets/hero-1080.mp4" type="video/mp4">
+    </video>
+    <div class="hero__scrim" aria-hidden="true"></div>
+  </div>
+  <div class="corners"><i></i><i></i><i></i><i></i></div>
+  <aside class="signal" aria-hidden="true">
+    <div class="signal__head"><span class="signal__dot"></span><span class="mono xs">LIVE — Signal</span><span class="mono xs signal__freq" id="signalFreq">88.4 MHz</span></div>
+    <pre class="signal__wave mono" id="signalWave"></pre>
+    <dl class="signal__rows mono xs">
+      <div><dt>Signal</dt><dd>AI · IoT · Design</dd></div>
+      <div><dt>Location</dt><dd>Chennai, IN</dd></div>
+      <div><dt>Uptime</dt><dd id="signalUptime">since 2024</dd></div>
+    </dl>
+  </aside>
+  <div class="hero__content">
+    <h1 class="h-xl center" data-split>Tarun KM.<br>Multidisciplinary engineer,<br>designer &amp; developer.</h1>
+    <h2 class="h-xl center hero__year" data-split>2024—Future</h2>
+  </div>
+</section>
+
+<!-- ============ MANIFESTO ============ -->
+<section class="manifesto" id="about" data-chapter="01" data-title="The Code" data-line="Every signal begins with a belief.">
+  <div class="guides"><i></i><i></i><i></i></div>
+  <aside class="spec spec--palette" aria-hidden="true">
+    <div class="spec__head mono xs"><span>SPEC.01</span><span>Palette</span></div>
+    <ul class="spec__swatches">
+      <li style="--c:#050705"><i></i><span>Ink</span><code>#050705</code></li>
+      <li style="--c:#3d403d"><i></i><span>Ash</span><code>#3D403D</code></li>
+      <li style="--c:#727472"><i></i><span>Smoke</span><code>#727472</code></li>
+      <li style="--c:#c9cec3"><i></i><span>Bone</span><code>#C9CEC3</code></li>
+      <li style="--c:#b4c4a4"><i></i><span>Phosphor</span><code>#B4C4A4</code></li>
+    </ul>
+    <p class="mono xs spec__foot">sampled from the signal</p>
+  </aside>
+  <aside class="spec spec--type" aria-hidden="true">
+    <div class="spec__head mono xs"><span>SPEC.02</span><span>Type</span></div>
+    <div class="spec__glyph">Aa</div>
+    <div class="spec__fonts"><span>Inter Tight</span><span class="mono">JetBrains Mono</span></div>
+    <div class="spec__scale mono xs"><span>64</span><span>40</span><span>32</span><span>20</span><span>12</span></div>
+  </aside>
+  <h3 class="h-xl center" data-words>I build where design,<br>AI and the Internet<br>of Things meet.</h3>
+  <h3 class="h-xl center" data-words>Innovate, scale, refine —<br>until a product earns<br>lasting value.</h3>
+  <h3 class="h-xl center" data-words>Theory, turned<br>into things.</h3>
+</section>
+
+<!-- ============ WORKS ============ -->
+<section class="block" id="works" data-chapter="02" data-title="Artifacts" data-line="What was built along the way.">
+  <header class="block__head">
+    <div class="block__meta">
+      <p class="xs">Selected<br>work</p>
+      <p class="xs">T—K</p>
+    </div>
+    <p class="m"><i class="ico ico--tri"></i>Works</p>
+    <p class="m"><i class="ico ico--tri ico--flip"></i>AI · IoT · Web · Design</p>
+    <h4 class="l block__intro" data-split>Products, platforms and<br>identities — shipped.</h4>
+  </header>
+
+  <div class="cases">
+    <!-- REPLACE: duplicate / edit each case -->
+    <a href="#" class="case case--s"><div class="case__img"><div class="ph" style="--h:350"></div><div class="ph ph--hover" style="--h:10"></div></div><h4 class="l">KONOS Drive Intelligence</h4><p class="l">AI + Full-stack Product</p></a>
+    <a href="#" class="case case--s"><div class="case__img"><div class="ph" style="--h:20"></div><div class="ph ph--hover" style="--h:0"></div></div><h4 class="l">MindWavery</h4><p class="l">AI · Mental-health Chatbot</p></a>
+    <a href="#" class="case case--m"><div class="case__img"><div class="ph" style="--h:355"></div><div class="ph ph--hover" style="--h:15"></div></div><h4 class="l">DailyBytes</h4><p class="l">Byte-sized Tech News Platform</p></a>
+    <a href="#" class="case case--m"><div class="case__img"><div class="ph" style="--h:30"></div><div class="ph ph--hover" style="--h:40"></div></div><h4 class="l">Audilog</h4><p class="l">Voice &amp; Vision Storefronts</p></a>
+    <a href="#" class="case case--m"><div class="case__img"><div class="ph" style="--h:25"></div><div class="ph ph--hover" style="--h:5"></div></div><h4 class="l">Avalink</h4><p class="l">Avalanche dApp for Events</p></a>
+    <a href="#" class="case case--w"><div class="case__img"><div class="ph" style="--h:0"></div><div class="ph ph--hover" style="--h:350"></div></div><h4 class="l">Novania</h4><p class="l">Conceptual Fashion Brand Identity</p></a>
+  </div>
+</section>
+
+<!-- ============ THE LOG (experience) ============ -->
+<section class="block log" id="experience" data-chapter="03" data-title="The Log" data-line="Every stop on the route so far.">
+  <header class="block__head">
+    <div class="block__meta">
+      <p class="xs">Field<br>log</p>
+      <p class="xs">T—K</p>
+    </div>
+    <p class="m"><i class="ico ico--tri"></i>Experience</p>
+    <p class="m"><i class="ico ico--tri ico--flip"></i>2024—NOW</p>
+    <h4 class="l block__intro" data-split>Roles, teams<br>and leadership.</h4>
+  </header>
+
+  <div class="log__stats">
+    <div class="log__stat"><span class="mono xs">Academic</span><strong data-count="9.27" data-dec="2">0</strong><span>CGPA · B.Tech CSE (IoT), SRMIST</span></div>
+    <div class="log__stat"><span class="mono xs">Competitions</span><strong data-count="7">0</strong><span>wins &amp; podium finishes</span></div>
+    <div class="log__stat"><span class="mono xs">One week</span><strong data-count="45000" data-prefix="₹">0</strong><span>won across three events</span></div>
+    <div class="log__stat"><span class="mono xs">Roles</span><strong data-count="8">0</strong><span>across industry, research &amp; community</span></div>
+  </div>
+
+  <ol class="log__list">
+      <li class="log__row">
+        <span class="log__no mono">01</span>
+        <span class="log__role">Python Full Stack Developer</span>
+        <span class="log__org">Altruisty</span>
+        <span class="log__date mono">Oct 2025 — Now</span>
+        <span class="log__go" aria-hidden="true">↗</span>
+        <div class="log__desc"><p>Building full-stack applications with Python in a hybrid team.</p></div>
+      </li>
+      <li class="log__row">
+        <span class="log__no mono">02</span>
+        <span class="log__role">Vice President, IoT Department</span>
+        <span class="log__org">SRM IST Ramapuram</span>
+        <span class="log__date mono">Dec 2024 — Now</span>
+        <span class="log__go" aria-hidden="true">↗</span>
+        <div class="log__desc"><p>Leading academic and technical initiatives for CSE with a specialisation in IoT.</p></div>
+      </li>
+      <li class="log__row">
+        <span class="log__no mono">03</span>
+        <span class="log__role">Project Intern</span>
+        <span class="log__org">MIT Square™</span>
+        <span class="log__date mono">Oct 2024 — Now</span>
+        <span class="log__go" aria-hidden="true">↗</span>
+        <div class="log__desc"><p>Built DailyBytes — a news platform for AI, blockchain, quantum computing and robotics.</p></div>
+      </li>
+      <li class="log__row">
+        <span class="log__no mono">04</span>
+        <span class="log__role">Chief Content Officer</span>
+        <span class="log__org">Daily Bytes</span>
+        <span class="log__date mono">Jul 2024 — Now</span>
+        <span class="log__go" aria-hidden="true">↗</span>
+        <div class="log__desc"><p>Running content strategy, social media and content operations.</p></div>
+      </li>
+      <li class="log__row">
+        <span class="log__no mono">05</span>
+        <span class="log__role">Student Partner</span>
+        <span class="log__org">Internshala</span>
+        <span class="log__date mono">Jun — Jul 2025</span>
+        <span class="log__go" aria-hidden="true">↗</span>
+        <div class="log__desc"><p>Helping students upskill, promoting campaigns and finding internships.</p></div>
+      </li>
+      <li class="log__row">
+        <span class="log__no mono">06</span>
+        <span class="log__role">Data Network &amp; Telecom Intern</span>
+        <span class="log__org">BSNL Ltd</span>
+        <span class="log__date mono">Jun 2025</span>
+        <span class="log__go" aria-hidden="true">↗</span>
+        <div class="log__desc"><p>Hands-on with data networks, fibre optics and optical-fibre systems.</p></div>
+      </li>
+      <li class="log__row">
+        <span class="log__no mono">07</span>
+        <span class="log__role">Research Intern</span>
+        <span class="log__org">IIT Madras Research Park</span>
+        <span class="log__date mono">Dec 2024 — Jan 2025</span>
+        <span class="log__go" aria-hidden="true">↗</span>
+        <div class="log__desc"><p>R&amp;D at one of India’s premier technology research parks.</p></div>
+      </li>
+      <li class="log__row">
+        <span class="log__no mono">08</span>
+        <span class="log__role">Co-founder</span>
+        <span class="log__org">The Konos Community</span>
+        <span class="log__date mono">Ongoing</span>
+        <span class="log__go" aria-hidden="true">↗</span>
+        <div class="log__desc"><p>A Tamil Nadu tech community connecting experts and students on real-world projects.</p></div>
+      </li>
+  </ol>
+</section>
+
+<!-- ============ SERVICES SLIDER ============ -->
+<section class="services" id="services" data-chapter="04" data-title="The Passage" data-line="Every journey needs a way in. This is yours.">
+  <div class="services__grid">
+    <div class="services__copy">
+      <div class="slider" id="slider">
+        <div class="slide is-active">
+          <h2 class="h-xl center" data-split>For Teams</h2>
+          <h3 class="h-xl center muted" data-split>Front-end, AI and IoT<br>hands that slot into<br>your team and ship.</h3>
+          <a href="https://docs.google.com/forms/d/e/1FAIpQLSci03HmY2oj2mR5ybv7m1PFlQ6D29Jc1Z_dIiUQ_JNoeeDIyA/viewform?usp=header" target="_blank" rel="noopener" class="btn">Start a brief <span>→</span></a>
+        </div>
+        <div class="slide">
+          <h2 class="h-xl center" data-split>For Founders</h2>
+          <h3 class="h-xl center muted" data-split>Identity, interfaces and<br>intelligent products — from<br>first sketch to launch.</h3>
+          <a href="https://docs.google.com/forms/d/e/1FAIpQLSci03HmY2oj2mR5ybv7m1PFlQ6D29Jc1Z_dIiUQ_JNoeeDIyA/viewform?usp=header" target="_blank" rel="noopener" class="btn">Start a brief <span>→</span></a>
+        </div>
+      </div>
+      <div class="services__controls">
+        <button class="slider__btn slider__btn--prev" aria-label="Previous">←</button>
+        <span class="mono xs services__index"><span id="slideIndex">01</span> / 02</span>
+        <button class="slider__btn slider__btn--next" aria-label="Next">→</button>
+      </div>
+    </div>
+
+    <!-- Boarding pass: the "way in" to working together -->
+    <div class="services__pass">
+      <a href="https://docs.google.com/forms/d/e/1FAIpQLSci03HmY2oj2mR5ybv7m1PFlQ6D29Jc1Z_dIiUQ_JNoeeDIyA/viewform?usp=header" target="_blank" rel="noopener" class="pass" id="pass" data-cursor="Board">
+        <div class="pass__card">
+          <div class="pass__main">
+            <div class="pass__head">
+              <span class="pass__brand"><img src="assets/logo.webp" alt=""> T—K Transit</span>
+              <span class="mono xs">Boarding pass · Class: Custom</span>
+            </div>
+
+            <div class="pass__route">
+              <div class="pass__stop">
+                <span class="mono xs dim">From</span>
+                <strong class="pass__city" data-text="IDEA">IDEA</strong>
+                <span class="mono xs dim">Your head, right now</span>
+              </div>
+              <div class="pass__path" aria-hidden="true">
+                <span class="pass__dots"></span>
+                <img class="pass__plane" src="assets/logo.webp" alt="">
+              </div>
+              <div class="pass__stop pass__stop--to">
+                <span class="mono xs dim">To</span>
+                <strong class="pass__city" data-text="LAUNCH">LAUNCH</strong>
+                <span class="mono xs dim">The world, soon</span>
+              </div>
+            </div>
+
+            <dl class="pass__fields">
+              <div><dt>Passenger</dt><dd>You</dd></div>
+              <div><dt>Gate</dt><dd>T—K</dd></div>
+              <div><dt>Seat</dt><dd>01A</dd></div>
+              <div><dt>Boarding</dt><dd id="passDate">Today</dd></div>
+              <div><dt>Status</dt><dd class="pass__status"><i></i>Open</dd></div>
+            </dl>
+
+            <div class="pass__cta"><span class="sc">Start a project</span> <span class="pass__arrow">→</span></div>
+          </div>
+
+          <div class="pass__stub">
+            <span class="pass__admit">Admit one</span>
+            <div class="pass__barcode" id="passBarcode" aria-hidden="true"></div>
+            <span class="mono xs" id="passNo">TK-0000-0000</span>
+          </div>
+
+          <div class="pass__sheen" aria-hidden="true"></div>
+          <div class="pass__grain" aria-hidden="true"></div>
+        </div>
+      </a>
+      <p class="mono xs services__hint">// tap the pass to board</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ASCII FIELD ============ -->
+<section class="ascii-band theme-dark" id="ascii" data-chapter="05" data-title="The Static" data-line="Where the work is made — touch it.">
+  <canvas class="ascii-band__canvas" id="asciiBand"></canvas>
+  <aside class="term" aria-hidden="true">
+    <div class="term__bar"><i></i><i></i><i></i><span class="mono xs">tk@static:~</span></div>
+    <pre class="term__body mono" id="termBody"></pre>
+  </aside>
+  <div class="ascii-band__content">
+    <p class="xs" data-scramble>// interactive field — move your cursor</p>
+    <h2 class="h-xl center" data-split data-scramble-lines>Built in code.<br>Rendered in type.</h2>
+    <p class="m" data-scramble>C · Python · JS · React · Next · Node · ESP32 · Figma</p>
+  </div>
+</section>
+
+<!-- ============ INSIGHTS ============ -->
+<section class="block" id="insights" data-chapter="06" data-title="Victories" data-line="Signals that were heard — on stage and on the scoreboard.">
+  <header class="block__head">
+    <div class="block__meta">
+      <p class="xs">Wins &amp;<br>recognition</p>
+      <p class="xs">T—K</p>
+    </div>
+    <p class="m"><i class="ico ico--tri"></i>Victories</p>
+    <p class="m"><i class="ico ico--tri ico--flip"></i>₹45,000 in 7 days</p>
+    <h4 class="l block__intro" data-split>Three wins in one week —<br>and the rest of the run.</h4>
+  </header>
+
+  <div class="insights">
+    <!-- REPLACE: your articles -->
+    <a href="https://www.linkedin.com/in/tarun-km/" target="_blank" rel="noopener" class="insight" data-cursor="Read"><span class="plus">+</span><div class="case__img"><div class="ph" style="--h:355"></div><div class="ph ph--hover" style="--h:20"></div></div><h4 class="l">SPARK TANK 3.0</h4><p class="l dim">Pitch competition</p><p class="l dim">Result:</p><p class="l">Winner · ₹20,000</p></a>
+    <a href="https://www.linkedin.com/in/tarun-km/" target="_blank" rel="noopener" class="insight" data-cursor="Read"><span class="plus">+</span><div class="case__img"><div class="ph" style="--h:30"></div><div class="ph ph--hover" style="--h:0"></div></div><h4 class="l">Innovators Day 2025</h4><p class="l dim">Innovation showcase</p><p class="l dim">Result:</p><p class="l">1st Prize · ₹15,000</p></a>
+    <a href="https://www.linkedin.com/in/tarun-km/" target="_blank" rel="noopener" class="insight" data-cursor="Read"><span class="plus">+</span><div class="case__img"><div class="ph" style="--h:210"></div><div class="ph ph--hover" style="--h:355"></div></div><h4 class="l">XPOSURE Project Expo 2025</h4><p class="l dim">Project expo</p><p class="l dim">Result:</p><p class="l">Winner · ₹10,000</p></a>
+    <a href="https://www.linkedin.com/in/tarun-km/" target="_blank" rel="noopener" class="insight" data-cursor="Read"><span class="plus">+</span><div class="case__img"><div class="ph" style="--h:0"></div><div class="ph ph--hover" style="--h:15"></div></div><h4 class="l">Hackfinity, SIMATS</h4><p class="l dim">Hackathon · Chennai</p><p class="l dim">Result:</p><p class="l">Best Innovation Award</p></a>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer theme-dark" id="contact" data-chapter="07" data-title="Arrival" data-line="You made it to the end of the signal.">
+  <div class="footer__grid">
+    <a href="tel:+919176199150" class="footer__cell h-xl">+91 91761 99150 <span>→</span></a>
+    <a href="https://www.instagram.com/multidisciplined/" target="_blank" rel="noopener" class="footer__cell h-xl">@multidisciplined <span>→</span></a>
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSci03HmY2oj2mR5ybv7m1PFlQ6D29Jc1Z_dIiUQ_JNoeeDIyA/viewform?usp=header" target="_blank" rel="noopener" class="footer__cell h-xl">Start collaboration <span>→</span></a>
+    <div class="footer__cell footer__cell--card">
+      <div class="avail">
+        <div class="avail__head mono xs"><span>STATUS.CARD</span><span id="availYear">2026</span></div>
+        <div class="avail__status"><span class="avail__dot"></span>Open for projects</div>
+        <dl class="avail__rows mono xs">
+          <div><dt>Next slot</dt><dd>Now</dd></div>
+          <div><dt>Avg. reply</dt><dd>&lt; 24h</dd></div>
+          <div><dt>Based</dt><dd>Chennai · Remote</dd></div>
+        </dl>
+        <div class="avail__months" id="availMonths" aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer__end">
+    <span class="mono xs">CH.07 — Arrival</span>
+    <span class="mono xs footer__end-line" data-scramble>// end of transmission. thank you for staying until the last frame.</span>
+    <span class="mono xs" id="footerTime">local time --:--</span>
+  </div>
+
+  <div class="footer__band">
+    <div class="footer__name" aria-label="Tarun KM">
+      <span class="ch">T</span><img class="footer__logo" src="assets/logo.webp" alt=""><span class="ch">R</span><span class="ch">U</span><span class="ch">N</span><span class="ch ch--space"></span><span class="ch">K</span><span class="ch">M</span>
+    </div>
+  </div>
+
+  <div class="footer__bottom">
+    <p class="h-l center">Engineer · Designer<br>&amp; Developer</p>
+    <a href="https://drive.google.com/file/d/1YG7zO1_hywmtOWOotH5zZE3mteTCgt0c/view?usp=sharing" target="_blank" rel="noopener" class="h-l center">Résumé<br>Download ↗</a>
+    <a href="https://www.instagram.com/multidisciplined/" target="_blank" rel="noopener" class="h-l center">Instagram<br>@multidisciplined</a>
+    <a href="https://www.linkedin.com/in/tarun-km/" target="_blank" rel="noopener" class="h-l center">LinkedIn<br>@tarun-km</a>
+  </div>
+</footer>
+
+<canvas class="cursor-trail" id="cursorTrail" aria-hidden="true"></canvas>
+<div class="cursor" id="cursor"><span>View</span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.min.js"></script>
+<script src="ascii.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
