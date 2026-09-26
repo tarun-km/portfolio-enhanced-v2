@@ -27,8 +27,9 @@ $$('[data-letters]').forEach((el) => {
 $$('.case__img').forEach((box) => {
   const inner = document.createElement('div');
   inner.className = 'case__inner';
-  while (box.firstChild) inner.appendChild(box.firstChild);
-  box.appendChild(inner);
+  // artwork moves into the parallax layer; plate captions stay pinned to the paper
+  [...box.childNodes].filter((n) => !(n.classList && n.classList.contains('plate__cap'))).forEach((n) => inner.appendChild(n));
+  box.prepend(inner);
 });
 
 // ---------- Hero video ----------
@@ -89,7 +90,7 @@ $('#loaderYear').textContent = new Date().getFullYear();
     const step = (now) => {
       if (id !== fadeId) return;
       const t = Math.min((now - start) / ms, 1);
-      audio.volume = from + (to - from) * t;
+      audio.volume = Math.min(1, Math.max(0, from + (to - from) * t));
       t < 1 ? requestAnimationFrame(step) : done && done();
     };
     requestAnimationFrame(step);
@@ -125,7 +126,16 @@ $('#loaderYear').textContent = new Date().getFullYear();
   load(0);
   render();
 
-  if (!optedOut) {
+  // The launch screen asks first-time visitors; it drives playback through this API
+  window.music = {
+    on: () => { play(); remember('on'); },
+    off: () => { if (on) pause(); remember('off'); },
+    get playing() { return on; },
+  };
+  let firstVisit = true;
+  try { firstVisit = !localStorage.getItem('tk.profile'); } catch (e) {}
+
+  if (!optedOut && !firstVisit) {
     audio.play().then(() => { on = true; render(); fade(VOLUME, 1500); }).catch(() => {
       const kick = () => {
         ['pointerdown', 'keydown', 'touchend'].forEach((ev) => removeEventListener(ev, kick, true));
@@ -154,13 +164,35 @@ if (window.Lenis && !reduced) {
   gsap.ticker.lagSmoothing(0);
   lenis.stop();
 }
+// One path for every in-page jump: close the menu first (it pauses smooth scroll),
+// then travel, leaving room for the fixed nav.
+function goTo(target) {
+  const menuEl = $('#menu');
+  const wasOpen = menuEl && menuEl.classList.contains('is-open');
+  if (wasOpen) window.setMenu(false);
+  const offset = target.id === 'top' ? 0 : -64;
+  const run = () => {
+    if (lenis) {
+      lenis.start();
+      // content above can change height mid-flight (lazy media, reveals), so re-aim on arrival
+      lenis.scrollTo(target, {
+        offset, duration: 1.6, force: true,
+        onComplete: () => {
+          if (Math.abs(target.getBoundingClientRect().top + offset) > 4) lenis.scrollTo(target, { offset, duration: 0.6, force: true });
+        },
+      });
+    }
+    else window.scrollTo({ top: target.getBoundingClientRect().top + scrollY + offset, behavior: reduced ? 'auto' : 'smooth' });
+    if (history.replaceState && target.id) history.replaceState(null, '', `#${target.id}`);
+  };
+  wasOpen ? setTimeout(run, 380) : run();
+}
 $$('a[href^="#"]').forEach((a) => a.addEventListener('click', (e) => {
   const href = a.getAttribute('href');
-  if (href === '#') { e.preventDefault(); return; } // placeholder links
-  const target = $(href);
-  if (!target) return;
   e.preventDefault();
-  lenis ? lenis.scrollTo(target, { duration: 1.6 }) : target.scrollIntoView();
+  if (href === '#') return; // placeholder links
+  const target = $(href);
+  if (target) goTo(target);
 }));
 
 // ---------- Loader ----------
@@ -173,6 +205,387 @@ const pageLoaded = new Promise((r) => (document.readyState === 'complete' ? r() 
 
 const pad = (n) => String(n).padStart(3, '0');
 
+// ---------- Theme: dark signal ⇄ light negative ----------
+(() => {
+  const btn = $('#themeToggle');
+  if (!btn) return;
+  const root = document.documentElement;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  const sync = () => {
+    const light = root.dataset.theme === 'light';
+    btn.setAttribute('aria-pressed', String(light));
+    btn.setAttribute('aria-label', light ? 'Switch to dark mode' : 'Switch to light mode');
+    $('.theme-toggle__label', btn).textContent = light ? 'Dark' : 'Light';
+    if (meta) meta.setAttribute('content', light ? '#f3f0f3' : '#050705');
+  };
+  const apply = (next) => {
+    root.dataset.theme = next;
+    try { localStorage.setItem('tk.theme', next); } catch (e) {}
+    sync();
+  };
+  sync();
+  const switchTo = (next, from = btn) => {
+    if (next === root.dataset.theme) return;
+    if (!document.startViewTransition || reduced) return apply(next);
+    const r = from.getBoundingClientRect();
+    const x = r.left + r.width / 2, y = r.top + r.height / 2;
+    root.style.setProperty('--vt-x', `${x}px`);
+    root.style.setProperty('--vt-y', `${y}px`);
+    root.style.setProperty('--vt-r', `${Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y))}px`);
+    document.startViewTransition(() => apply(next));
+  };
+  window.setTheme = switchTo;
+  btn.addEventListener('click', () => switchTo(root.dataset.theme === 'light' ? 'dark' : 'light'));
+})();
+
+// ---------- Image shield ----------
+// A deterrent layer over every artwork: no right-click save, drag-out, long-press save or
+// "open image in new tab". (Nothing on the web can stop a screenshot — this stops casual copying.)
+(() => {
+  const MEDIA = '.plate, .case__img, .angel-slot, .hero__media, .footer__band, .ticker, .pass, .lt--logo, .nav__logo';
+  // A transparent shield sits above the pixels of each artwork container
+  $$('.case__img, .angel-slot, .hero__media').forEach((box) => {
+    if (box.querySelector(':scope > .shield')) return;
+    const sh = document.createElement('span');
+    sh.className = 'shield';
+    sh.setAttribute('aria-hidden', 'true');
+    box.appendChild(sh);
+  });
+  const isMedia = (t) => t instanceof Element && (t.matches('img, video, canvas, picture, svg image, .shield') || t.closest(MEDIA));
+  document.addEventListener('contextmenu', (e) => { if (isMedia(e.target)) e.preventDefault(); }, true);
+  document.addEventListener('dragstart', (e) => { if (isMedia(e.target) || e.target instanceof HTMLImageElement) e.preventDefault(); }, true);
+  // images added later (angel video, lazy art) are covered by the same rules
+  new MutationObserver((list) => list.forEach((m) => m.addedNodes.forEach((n) => {
+    if (n instanceof HTMLImageElement || n instanceof HTMLVideoElement) { n.draggable = false; n.setAttribute('draggable', 'false'); if (n instanceof HTMLVideoElement) { n.disablePictureInPicture = true; n.setAttribute('controlslist', 'nodownload'); } }
+  }))).observe(document.body, { childList: true, subtree: true });
+  $$('img, video').forEach((n) => { n.draggable = false; n.setAttribute('draggable', 'false'); });
+})();
+
+// ---------- Privacy-first analytics ----------
+// Anonymous visitor id + a handful of named events, sent to /api/collect.
+// Nothing is sent when the browser asks not to be tracked (GPC / Do Not Track).
+const track = (() => {
+  const optedOut = navigator.globalPrivacyControl === true || navigator.doNotTrack === '1' || window.doNotTrack === '1';
+  let excluded = false; // the owner's own browser (set when signing in to /admin) never counts
+  try { excluded = localStorage.getItem('tk.exclude') === '1'; } catch (e) {}
+  if (optedOut || excluded) return () => {};
+  if (navigator.webdriver) { // automated browser: tell the server once (it only counts it), record nothing
+    fetch('/api/collect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ auto: true }), keepalive: true }).catch(() => {});
+    return () => {};
+  }
+  let vid;
+  try { vid = localStorage.getItem('tk.vid'); if (!vid) { vid = crypto.randomUUID(); localStorage.setItem('tk.vid', vid); } }
+  catch (e) { vid = crypto.randomUUID(); }
+  let queue = [];
+  let timer = 0;
+  const flush = () => {
+    clearTimeout(timer);
+    if (!queue.length) return;
+    const body = JSON.stringify({ vid, events: queue.splice(0, 20) });
+    fetch('/api/collect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true, credentials: 'same-origin' }).catch(() => {});
+    if (queue.length) flush();
+  };
+  addEventListener('pagehide', flush);
+  return (type, data = {}) => { queue.push({ type, ...data }); clearTimeout(timer); timer = setTimeout(flush, 1500); };
+})();
+window.track = track;
+
+(() => {
+  const w = innerWidth;
+  track('visit', { device: w < 768 ? 'mobile' : w < 1100 ? 'tablet' : 'desktop', lang: navigator.language, referrer: document.referrer && !document.referrer.startsWith(location.origin) ? document.referrer : '' });
+  const t0 = performance.now();
+  let depth = 0;
+  addEventListener('scroll', () => { depth = Math.max(depth, Math.round(((scrollY + innerHeight) / document.documentElement.scrollHeight) * 100)); }, { passive: true });
+  let sent = false;
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && !sent) { sent = true; track('leave', { seconds: (performance.now() - t0) / 1000, depth }); }
+  });
+  // what people act on
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a, button');
+    if (!a) return;
+    const href = a.getAttribute('href') || '';
+    const name = a.id === 'pass' ? 'pass'
+      : a.matches('.hud__cta') ? 'hud_cta'
+      : a.id === 'soundToggle' ? (window.music && window.music.playing ? 'sound_off' : 'sound_on')
+      : a.matches('[data-replay]') ? 'replay'
+      : href.includes('docs.google.com/forms') ? 'brief'
+      : href.includes('drive.google.com') ? 'resume'
+      : href.includes('instagram.com') ? 'instagram'
+      : href.includes('linkedin.com') ? 'linkedin'
+      : href.startsWith('tel:') ? 'phone' : null;
+    if (name) track('action', { name });
+  }, true);
+})();
+
+// ---------- Launch: a short conversation before the experience ----------
+// Runs once, between the loader reaching 100% and the logo flying into the nav.
+// Answers personalise the site and are remembered (localStorage) for next time.
+const PROFILE_KEY = 'tk.profile';
+const readProfile = () => { try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || 'null'); } catch (e) { return null; } };
+const saveProfile = (p) => { try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); } catch (e) {} };
+let launchStart = null;
+
+const ROLES = {
+  hiring:   { label: 'Hiring',              reply: "Then the experience log and the wins will matter most — they're one tap away.", cta: 'Hire me' },
+  project:  { label: 'Starting a project',  reply: 'Good. The boarding pass further down is your way in — no forms to fear.',   cta: 'Start a project' },
+  collab:   { label: 'Collaborating',       reply: 'I like building with people. The stack and the log will tell you how I work.', cta: 'Build together' },
+  explore:  { label: 'Just exploring',      reply: 'Perfect. Wander freely — every section is a chapter of the same story.',      cta: 'Say hello' },
+};
+const STARTS = [
+  ['#works', 'The work'], ['#services', 'Services'], ['#experience', 'Experience'],
+  ['#insights', 'Achievements'], ['#contact', 'Contact'], ['#top', 'Full tour'],
+];
+
+function applyProfile(p) {
+  if (!p) return;
+  document.documentElement.classList.toggle('calm', p.motion === 'calm');
+  const role = ROLES[p.role];
+  const cta = $('.hud__cta .sc');
+  if (role && cta) { cta.textContent = role.cta; cta.dataset.text = role.cta; }
+  const line = $('.hero .chapter__line');
+  if (line && p.name) line.textContent = `Signal received, ${p.name}.`;
+}
+
+function toast(text) {
+  const t = document.createElement('div');
+  t.className = 'toast mono xs';
+  t.textContent = text;
+  document.body.appendChild(t);
+  gsap.fromTo(t, { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, ease: 'expo.out' });
+  gsap.to(t, { y: -10, opacity: 0, duration: 0.6, delay: 3.6, onComplete: () => t.remove() });
+}
+
+async function runLaunch() {
+  const saved = readProfile();
+  if (saved) {
+    // returning visitor: no questions, just a greeting once the site is open
+    applyProfile(saved);
+    setTimeout(() => toast(saved.name ? `Welcome back, ${saved.name}.` : 'Welcome back.'), 2600);
+    return;
+  }
+
+  const root = $('#launch');
+  const thread = $('#launchThread');
+  const reply = $('#launchReply');
+  const stepEl = $('#launchStep');
+  const bar = $('#launchBar');
+  const TOTAL = 6;
+  const sleep = (ms) => new Promise((r) => setTimeout(r, reduced ? 0 : ms));
+  const profile = { name: '', role: 'explore', sound: 'off', motion: 'full', theme: document.documentElement.dataset.theme === 'light' ? 'light' : 'dark', start: '#top' };
+  let skipped = false;
+  let skipResolve;
+  const skipped$ = new Promise((r) => { skipResolve = r; });
+
+  const setStep = (n) => {
+    stepEl.textContent = `${String(n).padStart(2, '0')} / ${String(TOTAL).padStart(2, '0')}`;
+    gsap.to(bar, { scaleX: n / TOTAL, duration: 0.8, ease: 'expo.out' });
+  };
+
+  // Bot message: typing dots, then the text streams in with a glyph "print head" at its tip
+  const say = async (text) => {
+    if (skipped) return;
+    const row = document.createElement('div');
+    row.className = 'msg msg--bot';
+    row.innerHTML = '<span class="msg__who mono">TKM</span><p class="msg__bubble"><span class="msg__dots"><i></i><i></i><i></i></span></p>';
+    thread.appendChild(row);
+    gsap.from(row, { y: 16, opacity: 0, filter: 'blur(6px)', duration: 0.6, ease: 'expo.out', clearProps: 'filter' });
+    pin();
+    await sleep(420 + Math.min(text.length * 9, 700));
+    const bubble = $('.msg__bubble', row);
+    bubble.textContent = '';
+    const txt = document.createElement('span');
+    const head = document.createElement('span');
+    head.className = 'msg__head';
+    bubble.append(txt, head);
+    if (reduced) { txt.textContent = text; head.remove(); return; }
+    for (let i = 0; i < text.length; i++) {
+      if (skipped) break;
+      txt.textContent = text.slice(0, i + 1);
+      head.textContent = ASCII.GLYPHS[(Math.random() * ASCII.GLYPHS.length) | 0];
+      if (i % 12 === 0) thread.scrollTop = thread.scrollHeight;
+      const ch = text[i];
+      await new Promise((r) => setTimeout(r, /[.,—!?]/.test(ch) ? 110 : 16 + Math.random() * 14));
+    }
+    txt.textContent = text;
+    head.remove();
+    await sleep(160);
+  };
+
+  const echo = (text) => {
+    const row = document.createElement('div');
+    row.className = 'msg msg--you';
+    row.innerHTML = `<p class="msg__bubble"></p><span class="msg__who mono">${profile.name ? profile.name.slice(0, 12) : 'You'}</span>`;
+    $('.msg__bubble', row).textContent = text;
+    thread.appendChild(row);
+    gsap.from(row, { x: 28, opacity: 0, scale: 0.96, transformOrigin: '100% 100%', duration: 0.6, ease: 'expo.out' });
+    pin();
+  };
+
+  // Offer choices; resolves with the chosen value. Number keys pick options too.
+  let lastChip = null;
+  // Keep the newest message in view whenever the thread or the reply area changes size
+  // (instant jump after layout: new messages already animate in, so this reads as smooth and never lags behind)
+  const pin = () => { const go = () => { thread.scrollTop = thread.scrollHeight; }; go(); requestAnimationFrame(go); setTimeout(go, 60); setTimeout(go, 400); };
+  new ResizeObserver(pin).observe(reply);
+
+  const enter = (els) => gsap.fromTo(els,
+    { y: 18, opacity: 0, clipPath: 'inset(0% 0% 100% 0% round 14px)' },
+    { y: 0, opacity: 1, clipPath: 'inset(0% 0% 0% 0% round 14px)', duration: 0.7, ease: 'expo.out', stagger: 0.06, clearProps: 'clipPath' });
+
+  // Offer choices; resolves with the chosen value. Number keys pick options too.
+  const ask = (options) => new Promise((resolve) => {
+    if (skipped) return resolve(null);
+    reply.replaceChildren();
+    const wrap = document.createElement('div');
+    wrap.className = `opts ${options.length === 2 ? 'opts--2' : 'opts--grid'}`;
+    wrap.setAttribute('role', 'group');
+    const buttons = options.map(([value, label], i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'opt';
+      const key = document.createElement('span'); key.className = 'opt__key mono'; key.textContent = String(i + 1).padStart(2, '0');
+      const text = document.createElement('span'); text.className = 'opt__label'; text.textContent = label;
+      const go = document.createElement('span'); go.className = 'opt__go'; go.setAttribute('aria-hidden', 'true'); go.textContent = '→';
+      b.append(key, text, go);
+      b.addEventListener('click', () => { lastChip = b; done(value, label, b); });
+      wrap.appendChild(b);
+      return b;
+    });
+    reply.appendChild(wrap);
+    enter(buttons);
+    pin();
+    buttons[0].focus({ preventScroll: true });
+    let chosen = false;
+    const onKey = (e) => {
+      const n = parseInt(e.key, 10);
+      if (n >= 1 && n <= options.length) { e.preventDefault(); lastChip = buttons[n - 1]; done(...options[n - 1], buttons[n - 1]); }
+    };
+    document.addEventListener('keydown', onKey);
+    skipped$.then(() => { document.removeEventListener('keydown', onKey); resolve(null); });
+    function done(value, label, btn) {
+      if (chosen) return;
+      chosen = true;
+      document.removeEventListener('keydown', onKey);
+      buttons.forEach((x) => { x.disabled = true; });
+      btn.classList.add('is-chosen');
+      const others = buttons.filter((x) => x !== btn);
+      gsap.timeline({ onComplete: () => { reply.replaceChildren(); echo(label); resolve(value); } })
+        .to(others, { opacity: 0, y: 8, scale: 0.97, duration: reduced ? 0 : 0.3, ease: 'power2.in', stagger: 0.03 })
+        .to(btn, { scale: 1.02, duration: reduced ? 0 : 0.18, ease: 'power2.out' }, 0)
+        .to(btn, { opacity: 0, y: -10, duration: reduced ? 0 : 0.28, ease: 'power2.in' }, reduced ? 0 : 0.28);
+    }
+  });
+
+  const askName = () => new Promise((resolve) => {
+    if (skipped) return resolve('');
+    reply.innerHTML = `
+      <form class="name-form" autocomplete="off">
+        <label class="sr-only" for="launchName">Your name</label>
+        <div class="name-form__field">
+          <span class="name-form__prompt mono" aria-hidden="true">&gt;</span>
+          <input id="launchName" class="name-form__input" maxlength="24" placeholder="Type your name…" enterkeyhint="done" spellcheck="false">
+          <span class="name-form__count mono" aria-hidden="true">0/24</span>
+        </div>
+        <div class="name-form__actions">
+          <button class="opt opt--solid" type="submit"><span class="opt__label">Continue</span><span class="opt__go" aria-hidden="true">↵</span></button>
+          <button class="opt" type="button" data-anon><span class="opt__label">Stay anonymous</span><span class="opt__go" aria-hidden="true">→</span></button>
+        </div>
+      </form>`;
+    const form = $('form', reply);
+    const input = $('input', form);
+    const count = $('.name-form__count', form);
+    input.addEventListener('input', () => { count.textContent = `${input.value.length}/24`; });
+    enter([$('.name-form__field', form), ...$$('.opt', form)]);
+    pin();
+    setTimeout(() => input.focus({ preventScroll: true }), 60);
+    const finish = (name) => {
+      gsap.to(form, { opacity: 0, y: -10, duration: reduced ? 0 : 0.3, ease: 'power2.in', onComplete: () => { reply.replaceChildren(); resolve(name); } });
+    };
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = input.value.trim().replace(/[<>]/g, '').slice(0, 24);
+      if (!name) { gsap.fromTo($('.name-form__field', form), { x: -6 }, { x: 0, duration: 0.5, ease: 'elastic.out(1, 0.3)' }); input.focus(); return; }
+      profile.name = name;
+      echo(name);
+      finish(name);
+    });
+    $('[data-anon]', form).addEventListener('click', () => { echo('I’d rather stay anonymous'); finish(''); });
+    skipped$.then(() => finish(''));
+  });
+
+  // ---- open ----
+  root.hidden = false;
+  document.body.classList.add('launching');
+  gsap.to('.loader__center', { opacity: 0, duration: 0.5 });
+  gsap.fromTo(root, { opacity: 0 }, { opacity: 1, duration: 0.6 });
+  gsap.from('.launch__frame', { y: 40, scale: 0.97, duration: 1, ease: 'expo.out' });
+  const onEsc = (e) => { if (e.key === 'Escape') skip(); };
+  document.addEventListener('keydown', onEsc);
+  function skip() { if (skipped) return; skipped = true; skipResolve(); }
+  $('#launchSkip').addEventListener('click', skip);
+
+  // ---- the conversation ----
+  const convo = (async () => {
+    setStep(1);
+    await say("Hello, I'm Tarun.");
+    await say('This is my portfolio — part engineer, part designer, part developer.');
+    await say('Before we get into the full experience, let me know who you are.');
+    await askName();
+
+    setStep(2);
+    await say(profile.name ? `Good to meet you, ${profile.name}. What brings you here?` : 'No problem. What brings you here?');
+    const role = await ask(Object.entries(ROLES).map(([k, v]) => [k, v.label]));
+    if (role) { profile.role = role; await say(ROLES[role].reply); }
+
+    setStep(3);
+    await say('Would you like music on? Three tracks I made with Gemini play quietly in the background.');
+    const sound = await ask([['on', 'Sound on ♪'], ['off', 'Keep it quiet']]);
+    if (sound) {
+      profile.sound = sound;
+      sound === 'on' ? window.music.on() : window.music.off();   // inside the click = allowed to play
+      await say(sound === 'on' ? 'Nice. You can mute it anytime from the bar at the bottom.' : 'Silence it is. The bar at the bottom can change that later.');
+    }
+
+    setStep(4);
+    await say('How much motion do you like?');
+    const motion = await ask([['full', 'Full cinema'], ['calm', 'Keep it calm']]);
+    if (motion) { profile.motion = motion; document.documentElement.classList.toggle('calm', motion === 'calm'); }
+
+    setStep(5);
+    await say('Dark signal, or a light negative? You can flip it anytime from the top bar.');
+    const theme = await ask([['dark', '● Dark signal'], ['light', '○ Light negative']]);
+    if (theme) {
+      profile.theme = theme;
+      window.setTheme && window.setTheme(theme, lastChip || $('#themeToggle'));
+      await say(theme === 'light' ? 'Inverted. Every engraving now prints as a negative.' : 'Dark it stays — the way the signal was drawn.');
+    }
+
+    setStep(6);
+    await say('Last one — where should we begin?');
+    const start = await ask(STARTS);
+    if (start) profile.start = start;
+    await say(profile.name ? `Tuning in for you, ${profile.name}…` : 'Tuning in…');
+    await sleep(500);
+  })();
+
+  await Promise.race([convo, skipped$]);
+  document.removeEventListener('keydown', onEsc);
+  if (skipped) profile.skipped = true;
+  saveProfile(profile);
+  applyProfile(profile);
+  track('launch', { name: profile.name, role: profile.role, sound: profile.sound, motion: profile.motion, theme: profile.theme, start: profile.start, skipped: !!profile.skipped });
+  launchStart = profile.start !== '#top' ? profile.start : null;
+
+  // ---- close: the conversation folds away and the loader's name returns for the fly-in ----
+  await gsap.timeline()
+    .to('.launch__frame', { y: -30, opacity: 0, duration: 0.6, ease: 'power3.in' })
+    .to(root, { opacity: 0, duration: 0.4 }, 0.3)
+    .to('.loader__center', { opacity: 1, duration: 0.5 }, 0.45);
+  root.remove();
+  document.body.classList.remove('launching');
+}
+
 async function runLoader() {
   // Everything eases in together: labels, name, line — no noise, no glyph churn
   gsap.to(['.loader__top', '.loader__bottom'], { opacity: 1, duration: 1.2, ease: 'power2.out', delay: 0.2 });
@@ -184,10 +597,11 @@ async function runLoader() {
     count.textContent = pad(Math.round(c.v));
     bar.style.transform = `scaleX(${c.v / 100})`;
   };
-  await gsap.to(c, { v: 90, duration: reduced ? 0.2 : 2.6, ease: 'power3.inOut', onUpdate: draw });
+  await gsap.to(c, { v: 90, duration: reduced ? 0.2 : 1.6, ease: 'power3.inOut', onUpdate: draw });
   await Promise.all([pageLoaded, document.fonts.ready]);
   status.textContent = 'Ready';
   await gsap.to(c, { v: 100, duration: 0.5, ease: 'power2.out', onUpdate: draw });
+  await runLaunch();
   exitLoader();
 }
 
@@ -232,6 +646,7 @@ function exitLoader() {
     defaults: { ease: 'expo.inOut' },
     onComplete() {
       window.playHeroVideo && window.playHeroVideo();
+      if (launchStart) { const t = $(launchStart); t && setTimeout(() => goTo(t), 500); }
       loader.remove();
       document.body.classList.remove('is-loading');
       lenis && lenis.start();
@@ -313,7 +728,7 @@ if (!reduced) {
     const ov = ASCII.overlay(box);
     const tl = gsap.timeline({ scrollTrigger: { trigger: card, start: 'top 88%' } });
     tl.fromTo(box, { clipPath: 'inset(100% 0% 0% 0%)' }, { clipPath: 'inset(0% 0% 0% 0%)', duration: 1.4, ease: 'expo.inOut', onStart: ov.kick })
-      .from(inner, { scale: 1.35, duration: 1.8, ease: 'expo.out' }, 0.2)
+      .from(inner, { scale: box.classList.contains('plate') ? 1.06 : 1.35, duration: 1.8, ease: 'expo.out' }, 0.2)
       // image arrives "encoded" as characters, then decodes cell by cell
       .to(ov, { reveal: 0, duration: 1.6, ease: 'power2.inOut' }, 0.5)
       .from(texts, { y: 20, opacity: 0, duration: 0.8, ease: 'power3.out', stagger: 0.06 }, 0.7)
@@ -329,7 +744,8 @@ if (!reduced) {
       rx(-((e.clientY - r.top) / r.height - 0.5) * 8);
     });
     box.addEventListener('mouseleave', () => { rx(0); ry(0); });
-    gsap.fromTo(inner, { yPercent: -6 }, { yPercent: 6, ease: 'none', scrollTrigger: { trigger: card, start: 'top bottom', end: 'bottom top', scrub: true } });
+    const drift = box.classList.contains('plate') ? 2 : 6;
+    gsap.fromTo(inner, { yPercent: -drift }, { yPercent: drift, ease: 'none', scrollTrigger: { trigger: card, start: 'top bottom', end: 'bottom top', scrub: true } });
   });
 
   // Grids skew slightly with scroll velocity
@@ -353,7 +769,7 @@ if (!reduced) {
   gsap.from('.pass__card', { opacity: 0, rotationX: 35, duration: 1.6, ease: 'expo.out', scrollTrigger: { trigger: '.services__pass', start: 'top 80%' } });
 
   // Footer: contact rows, logo spin-in, giant letters rise one by one
-  gsap.from('.footer__cell', { y: 60, opacity: 0, duration: 1, ease: 'power3.out', stagger: 0.1, scrollTrigger: { trigger: '.footer', start: 'top 75%' } });
+  gsap.from('.channel', { y: 60, opacity: 0, duration: 1, ease: 'power3.out', stagger: 0.1, scrollTrigger: { trigger: '.footer', start: 'top 75%' } });
   // The name that opened the site rises one last time, logo in place of the A
   const band = gsap.timeline({ scrollTrigger: { trigger: '.footer__band', start: 'top 88%' } });
   band.from('.footer__band', { clipPath: 'inset(50% 0% 50% 0% round .8rem)', duration: 1.4, ease: 'expo.inOut' })
@@ -361,8 +777,7 @@ if (!reduced) {
     .from('.footer__logo', { rotate: -12, scale: 0.8, duration: 1.8, ease: 'expo.out' }, 0.55)
     .add(() => $$('.footer__name .ch:not(.ch--space)').forEach((c, i) => ASCII.scramble(c, { from: 'blank', duration: 0.9, delay: i * 0.05 })), 0.5);
   gsap.fromTo('.footer__logo', { y: 20 }, { y: -20, ease: 'none', scrollTrigger: { trigger: '.footer', start: 'top bottom', end: 'bottom bottom', scrub: true } });
-  ScrollTrigger.create({ trigger: '.footer__end', start: 'top 90%', onEnter: () => ASCII.scramble($('.footer__end-line'), { from: 'blank', duration: 1.6 }) });
-  gsap.from('.footer__bottom > *', { y: 30, opacity: 0, duration: 0.9, ease: 'power3.out', stagger: 0.08, scrollTrigger: { trigger: '.footer__bottom', start: 'top 98%' } });
+  gsap.from('.footer__meta > *', { y: 20, opacity: 0, duration: 0.9, ease: 'power3.out', stagger: 0.06, scrollTrigger: { trigger: '.footer__meta', start: 'top 98%' } });
 
   // ASCII band: copy decodes on entry, heading drifts against the field
   ScrollTrigger.create({
@@ -380,7 +795,7 @@ if (!reduced) {
   // Footer: contact lines decode as they rise
   ScrollTrigger.create({
     trigger: '.footer', start: 'top 75%',
-    onEnter: () => $$('.footer__cell .sc').forEach((el, i) => ASCII.scramble(el, { from: 'blank', duration: 1, delay: i * 0.12 })),
+    onEnter: () => $$('.channel .sc').forEach((el, i) => ASCII.scramble(el, { from: 'blank', duration: 1, delay: i * 0.12 })),
   });
 
   // Nav hides on scroll down, returns on scroll up
@@ -397,15 +812,22 @@ if (!reduced) {
 ASCII.band($('#asciiBand'));
 
 // Links & buttons re-encode their label on hover
-$$('.footer__cell').forEach((el) => ASCII.wrapText(el));
 [
-  ...$$('.nav__group a, .dock a, .footer__bottom a, .menu__list a'),
+  ...$$('.nav__group a, .dock a, .footer__meta a, .menu__list a'),
 ].forEach((el) => ASCII.hover(el));
-$$('.btn, .footer__cell, .pass').forEach((el) => {
+$$('.btn, .channel, .pass').forEach((el) => {
   const target = el.querySelector('.sc') || ASCII.wrapText(el);
   ASCII.hover(el, target);
 });
 $$('.case, .insight').forEach((card) => ASCII.hover(card, $('h4', card), { duration: 0.6 }));
+// plate captions swap to the hover artwork's title (works) as the image changes
+$$('.case').forEach((card) => {
+  const t = $('.plate__title', card);
+  if (!t || !t.dataset.alt) return;
+  const main = t.textContent;
+  card.addEventListener('mouseenter', () => ASCII.scramble(t, { text: t.dataset.alt, duration: 0.5 }));
+  card.addEventListener('mouseleave', () => ASCII.scramble(t, { text: main, duration: 0.5 }));
+});
 ASCII.hover($('.nav__toggle'));
 ASCII.hover($('.hud__cta'), $('.hud__cta .sc'));
 ASCII.hover($('.nav__logo'), $('.nav__km'), { duration: 0.5 });
@@ -429,9 +851,10 @@ const chapters = $$('[data-chapter]');
 chapters.forEach((sec) => {
   const el = document.createElement('div');
   el.className = 'chapter';
-  el.innerHTML = `<span class="chapter__no">CH.${sec.dataset.chapter}</span><span class="chapter__title">${sec.dataset.title}</span><span class="chapter__rule"></span><span class="chapter__line">${sec.dataset.line}</span>`;
+  el.innerHTML = `<span class="chapter__kind">${sec.dataset.kind}</span><span class="chapter__no">CH.${sec.dataset.chapter}</span><span class="chapter__title">${sec.dataset.title}</span><span class="chapter__rule"></span><span class="chapter__line">${sec.dataset.line}</span>`;
   sec.prepend(el);
   if (reduced) return;
+  ScrollTrigger.create({ trigger: sec, start: 'top 60%', once: true, onEnter: () => track('chapter', { name: sec.dataset.chapter }) });
   const parts = $$('.chapter__no, .chapter__title, .chapter__line', el);
   ScrollTrigger.create({
     trigger: sec, start: 'top 75%',
@@ -454,7 +877,7 @@ chapters.forEach((sec) => {
     if (i === active) return;
     active = i;
     const c = chapters[i];
-    ASCII.scramble(label, { text: `CH.${c.dataset.chapter} — ${c.dataset.title}`, duration: 0.6 });
+    ASCII.scramble(label, { text: `${c.dataset.chapter} · ${c.dataset.kind}`, duration: 0.6 });
     gsap.to('.hud__mark', { rotation: `+=${i > prevActive ? 90 : -90}`, duration: 0.8, ease: 'expo.out' });
     prevActive = i;
   };
@@ -490,7 +913,7 @@ chapters.forEach((sec) => {
   // Barcode: random bar widths, regenerated when you hover (the pass "re-prints")
   const barcode = $('#passBarcode');
   const printBarcode = () => {
-    barcode.innerHTML = Array.from({ length: 34 }, () => `<i style="flex:${[1, 1, 2, 3][Math.floor(Math.random() * 4)]}"></i>`).join('');
+    barcode.replaceChildren(...Array.from({ length: 34 }, () => { const i = document.createElement('i'); i.style.flex = String([1, 1, 2, 3][Math.floor(Math.random() * 4)]); return i; }));
   };
   printBarcode();
 
@@ -532,13 +955,8 @@ chapters.forEach((sec) => {
   });
 })();
 
-// Footer local clock (the "arrival time")
-(() => {
-  const el = $('#footerTime');
-  const t = () => { el.textContent = `arrived ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })} local`; };
-  t();
-  setInterval(t, 30000);
-})();
+// Footer year
+$('#footerYear').textContent = new Date().getFullYear();
 
 // ---------- Artifact cards ----------
 // Hero signal: a live ASCII waveform, drifting frequency and an uptime counter
@@ -652,7 +1070,8 @@ $$('.case').forEach((card, i) => {
   const homeNext = card.nextElementSibling;
   const manifesto = $('.manifesto');
   const place = (mobile) => {
-    if (mobile) manifesto.insertBefore(card, manifesto.querySelector('h3'));
+    // insert before the first statement block (a direct child of the manifesto)
+    if (mobile) manifesto.insertBefore(card, manifesto.querySelector(':scope > .stmt'));
     else home.insertBefore(card, homeNext);
     card.classList.toggle('signal--inline', mobile);
   };
@@ -660,6 +1079,42 @@ $$('.case').forEach((card, i) => {
   place(mq.matches);
   mq.addEventListener('change', (e) => { place(e.matches); ScrollTrigger.refresh(); });
 })();
+
+// ---------- The guardian (animated angel) ----------
+// Every .angel-slot shares one loader: VP9-alpha WebM for Chrome/Firefox/Edge/Android,
+// animated WebP for Safari (no VP9 alpha), a still for reduced motion. Files are
+// fetched once and cached; each copy pauses itself when off screen.
+const ANGEL = { webm: 'assets/angel.webm', webp: 'assets/angel.webp', poster: 'assets/angel-poster.webp' };
+const isSafari = /^((?!chrome|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent);
+function mountAngel(slot) {
+  if (!slot || slot.dataset.mounted) return;
+  slot.dataset.mounted = '1';
+  if (reduced || isSafari) {
+    slot.innerHTML = `<img src="${reduced ? ANGEL.poster : ANGEL.webp}" alt="" decoding="async">`;
+    return;
+  }
+  const v = document.createElement('video');
+  Object.assign(v, { muted: true, loop: true, autoplay: true, playsInline: true, poster: ANGEL.poster, src: ANGEL.webm });
+  v.setAttribute('muted', '');
+  v.setAttribute('playsinline', '');
+  slot.appendChild(v);
+  v.play().catch(() => {});
+  new IntersectionObserver(([e]) => (e.isIntersecting ? v.play().catch(() => {}) : v.pause())).observe(slot);
+}
+// slots mount when they come near
+const angelIO = new IntersectionObserver((entries) => entries.forEach((e) => {
+  if (e.isIntersecting) { angelIO.unobserve(e.target); mountAngel(e.target); }
+}), { rootMargin: '800px 0px' });
+$$('.angel-slot[data-angel="lazy"]').forEach((el) => angelIO.observe(el));
+
+if (!reduced) {
+  // The Static: rises out of the field as you scroll through the chapter
+  const fig = $('#angel');
+  gsap.from(fig, { opacity: 0, scale: 0.85, duration: 1.8, ease: 'expo.out', scrollTrigger: { trigger: '.ascii-band', start: 'top 70%' } });
+  gsap.matchMedia().add('(min-width: 992px)', () => {
+    gsap.fromTo(fig, { yPercent: -35 }, { yPercent: -65, ease: 'none', scrollTrigger: { trigger: '.ascii-band', start: 'top bottom', end: 'bottom top', scrub: true } });
+  });
+}
 
 // Print-shop registration marks on each card
 $$('.signal, .spec, .term, .avail, .log__stat').forEach((card) => {
@@ -739,6 +1194,25 @@ if (!reduced) {
   }
 })();
 
+// ---------- Kinetic tickers ----------
+$$('.ticker').forEach((tk, i) => {
+  const track = $('.ticker__track', tk);
+  const dir = i % 2 ? 1 : -1;
+  if (reduced) return;
+  const loop = gsap.fromTo(track, { xPercent: dir < 0 ? 0 : -50 }, { xPercent: dir < 0 ? -50 : 0, duration: 38, ease: 'none', repeat: -1 });
+  // scroll speed pushes the ticker, then it eases back to cruise
+  ScrollTrigger.create({
+    trigger: tk, start: 'top bottom', end: 'bottom top',
+    onUpdate: (self) => {
+      const boost = 1 + Math.min(Math.abs(self.getVelocity()) / 300, 6);
+      gsap.to(loop, { timeScale: boost * (self.direction || 1), duration: 0.25, overwrite: true });
+      gsap.to(loop, { timeScale: 1, duration: 1.2, delay: 0.25, ease: 'power2.out' });
+    },
+  });
+  tk.addEventListener('mouseenter', () => gsap.to(loop, { timeScale: 0.25, duration: 0.6 }));
+  tk.addEventListener('mouseleave', () => gsap.to(loop, { timeScale: 1, duration: 0.6 }));
+});
+
 // ---------- Services slider ----------
 const slides = $$('.slide');
 let current = 0;
@@ -766,7 +1240,7 @@ const setMenu = (open) => {
   menu.classList.toggle('is-open', open);
   menu.setAttribute('aria-hidden', String(!open));
   toggle.setAttribute('aria-expanded', String(open));
-  toggle.dataset.text = open ? 'Close' : 'Discover';
+  toggle.dataset.text = open ? 'Close' : 'Index';
   ASCII.scramble(toggle, { text: toggle.dataset.text, duration: 0.5 });
   document.body.classList.toggle('menu-open', open);
   // The HUD bar steps aside while the menu owns the screen, then glides back
@@ -778,12 +1252,46 @@ const setMenu = (open) => {
     gsap.fromTo('.menu__list a', { yPercent: 110 }, { yPercent: 0, duration: 1, ease: 'expo.out', stagger: 0.06, delay: 0.3 });
     $$('.menu__list a').forEach((a, i) => ASCII.scramble(a, { from: 'blank', duration: 0.9, delay: 0.3 + i * 0.06 }));
     gsap.fromTo('.menu__bar', { yPercent: 120 }, { yPercent: 0, duration: 0.9, ease: 'expo.out', delay: 0.5 });
+    mountAngel($('.menu__angel'));
+    gsap.fromTo('.menu__angel', { opacity: 0, y: 60 }, { opacity: 0.16, y: 0, duration: 1.6, ease: 'expo.out', delay: 0.35, overwrite: true });
   } else {
     lenis && lenis.start();
   }
 };
 toggle.addEventListener('click', () => setMenu(!menu.classList.contains('is-open')));
-$$('a', menu).forEach((a) => a.addEventListener('click', () => setMenu(false)));
+window.setMenu = setMenu;
+$('[data-replay]') && $('[data-replay]').addEventListener('click', (e) => { e.preventDefault(); e.stopImmediatePropagation(); try { localStorage.removeItem(PROFILE_KEY); } catch (x) {} location.href = location.pathname; }, true);
+// external menu links (résumé) still close the menu; in-page ones are handled by goTo()
+$$('a:not([href^="#"])', menu).forEach((a) => a.addEventListener('click', () => setMenu(false)));
+
+// Active section: nav + menu links light up for the chapter you're reading
+(() => {
+  const links = $$('.nav__group a[href^="#"], .menu__list a[href^="#"]');
+  const ids = [...new Set(links.map((a) => a.getAttribute('href').slice(1)))];
+  ids.forEach((id) => {
+    const sec = document.getElementById(id);
+    if (!sec) return;
+    ScrollTrigger.create({
+      trigger: sec, start: 'top 55%', end: 'bottom 55%',
+      onToggle: (self) => links.forEach((a) => {
+        if (a.getAttribute('href') === `#${id}`) a.classList.toggle('is-active', self.isActive);
+      }),
+    });
+  });
+})();
+
+// Keyboard: J / K step through chapters (skipped while typing or when the menu is open)
+document.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey || /input|textarea/i.test(e.target.tagName)) return;
+  const k = e.key.toLowerCase();
+  if (k !== 'j' && k !== 'k') return;
+  const secs = $$('[data-chapter]');
+  const y = scrollY + innerHeight * 0.3;
+  let i = secs.findIndex((s) => s.offsetTop > y);
+  if (i === -1) i = secs.length;
+  const next = k === 'j' ? secs[Math.min(i, secs.length - 1)] : secs[Math.max(i - 2, 0)];
+  if (next) goTo(next);
+});
 document.addEventListener('keydown', (e) => e.key === 'Escape' && setMenu(false));
 
 // ---------- Cursor + magnetic buttons ----------

@@ -1,0 +1,16 @@
+{
+  "name": "tarun-km-portfolio",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "hash-password": "node scripts/hash-password.mjs",
+    "test": "node --test tests/"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.0"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.2.0"
+  }
+}

@@ -1,0 +1,8 @@
+# Never publish these as static files — they aren't part of the site
+tests/
+scripts/
+node_modules/
+.claude/
+*.md
+.audit.js
+.env*

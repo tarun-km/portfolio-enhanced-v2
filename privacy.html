@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#050705">
+<title>Privacy — Tarun KM</title>
+<link rel="icon" href="/assets/logo.webp" type="image/webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root { --ink: #050705; --ink-2: #0c0f0c; --bone: #c9cec3; --smoke: #8a8c8a; --phosphor: #b4c4a4; --line: rgba(201,206,195,.16); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--ink-2); color: var(--bone); font-family: Inter, Arial, sans-serif; line-height: 1.6; padding: 48px 20px 96px; }
+  main { max-width: 680px; margin: 0 auto; }
+  .mono { font-family: "JetBrains Mono", monospace; font-size: 12px; color: var(--phosphor); }
+  h1 { font-family: "Inter Tight", Arial, sans-serif; font-weight: 500; font-size: clamp(40px, 8vw, 72px); line-height: .95; letter-spacing: -0.04em; margin: 16px 0 28px; }
+  h2 { font-family: "Inter Tight", Arial, sans-serif; font-weight: 500; font-size: 22px; letter-spacing: -0.02em; margin: 36px 0 10px; padding-top: 18px; border-top: 1px solid var(--line); }
+  p, li { color: var(--smoke); font-size: 16px; }
+  ul { padding-left: 20px; display: grid; gap: 6px; }
+  strong { color: var(--bone); font-weight: 500; }
+  a { color: var(--phosphor); }
+  .back { display: inline-block; margin-top: 44px; padding: 12px 20px; border-radius: 999px; background: var(--bone); color: var(--ink); text-decoration: none; }
+  button { font: inherit; margin-top: 12px; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--line); background: transparent; color: var(--bone); cursor: pointer; }
+</style>
+</head>
+<body>
+<main>
+  <span class="mono">TKM · Privacy</span>
+  <h1>What this site remembers about you.</h1>
+  <p>Short version: very little, nothing that can be sold, and you can opt out.</p>
+
+  <h2>What is collected</h2>
+  <ul>
+    <li><strong>A random visitor ID</strong> created in your browser — not linked to your identity.</li>
+    <li><strong>Your answers on the welcome screen</strong>: the name you typed (optional), why you're visiting, and your sound, motion and starting-section choices.</li>
+    <li><strong>How the visit went</strong>: which sections you reached, which links you used (e.g. the brief form, résumé, socials), time on page and how far you scrolled.</li>
+    <li><strong>Coarse context</strong>: device type (phone / tablet / desktop), browser language, country, and the website that linked you here (domain only).</li>
+  </ul>
+
+  <h2>What is never collected</h2>
+  <ul>
+    <li>Your IP address is not stored. Country comes from the hosting provider's network header.</li>
+    <li>No advertising or third-party tracking cookies, no fingerprinting, no selling or sharing of data.</li>
+  </ul>
+
+  <h2>Why</h2>
+  <p>To personalise your visit, remember your preferences next time, and help Tarun understand which work people find useful.</p>
+
+  <h2>How long</h2>
+  <p>Data is deleted automatically after 12 months of inactivity.</p>
+
+  <h2>Your choices</h2>
+  <ul>
+    <li>If your browser sends <strong>Global Privacy Control</strong> or <strong>Do Not Track</strong>, nothing is recorded.</li>
+    <li>You can clear what this browser remembers below. To have stored data deleted, contact Tarun via <a href="https://www.linkedin.com/in/tarun-km/" rel="noopener">LinkedIn</a> or <a href="https://www.instagram.com/multidisciplined/" rel="noopener">Instagram</a>.</li>
+  </ul>
+  <button type="button" id="forget">Forget me on this browser</button>
+  <p class="mono" id="forgetMsg" aria-live="polite"></p>
+
+  <a class="back" href="/">← Back to the portfolio</a>
+</main>
+<script src="/privacy.js" defer></script>
+</body>
+</html>

@@ -1,2 +1,17 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# Artwork is not for image search or AI training
+User-agent: Googlebot-Image
+Disallow: /assets/
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
